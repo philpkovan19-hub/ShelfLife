@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ShelfLife — consignment with automatic markdown on BOT Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
+<style>
+/* ============================================================================
+   SCANDINAVIAN / NORDIC MINIMAL — off-white and sand, hairlines, generous air,
+   no shadows, no gradients, nothing shouting. One warm neutral palette.
+   ARCHITECTURE: a gallery of swing tickets. Every item is a hanging price tag
+   — notched corner, punched hole, string — set in a loose airy grid, never a
+   card. Markdown is drawn as a horizontal ladder of dots, one per step, so the
+   schedule is readable at a glance. Navigation is a quiet row of text links.
+   ========================================================================== */
+:root{
+  --paper:#faf8f4;
+  --sand:#efe9df;
+  --sand-deep:#e3dbcd;
+  --ink:#2b2824;
+  --ink-soft:#817a70;
+  --hair:#ddd5c7;
+  --moss:#5c6b58;
+  --clay:#a8674f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Jost",system-ui,sans-serif;font-weight:300;
+  font-size:16px;line-height:1.62;
+}
+.serif{font-family:"Libre Baskerville",Georgia,serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 44px}
+
+/* -------------------------------------------------------------- quiet header */
+header.top{padding:42px 0 0}
+.top-row{display:flex;align-items:baseline;gap:28px;flex-wrap:wrap}
+.logo{
+  font-family:"Libre Baskerville",Georgia,serif;font-size:27px;letter-spacing:-.015em;
+  font-weight:400;
+}
+.logo em{font-style:italic;color:var(--ink-soft)}
+nav.links{display:flex;gap:24px;flex-wrap:wrap;margin-left:4px}
+nav.links a{
+  font-size:14px;color:var(--ink-soft);text-decoration:none;letter-spacing:.02em;
+  padding-bottom:2px;border-bottom:1px solid transparent;cursor:pointer;
+}
+nav.links a:hover,nav.links a.on{color:var(--ink);border-bottom-color:var(--ink)}
+.top-right{margin-left:auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.chip{
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);
+  border:1px solid var(--hair);border-radius:999px;padding:5px 12px;
+}
+.acct{font-size:13px;color:var(--ink-soft)}
+button.q{
+  font-family:"Jost",sans-serif;font-size:13.5px;font-weight:400;letter-spacing:.03em;
+  background:var(--ink);color:var(--paper);border:1px solid var(--ink);
+  border-radius:999px;padding:9px 20px;cursor:pointer;
+}
+button.q:hover{background:transparent;color:var(--ink)}
+button.q[disabled]{opacity:.35;cursor:not-allowed}
+button.q.light{background:transparent;color:var(--ink);border-color:var(--hair)}
+button.q.light:hover{border-color:var(--ink)}
+button.q.tiny{font-size:12px;padding:6px 14px}
+.hr{height:1px;background:var(--hair);margin:34px 0 0}
+
+/* -------------------------------------------------------------- introduction */
+.intro{padding:52px 0 46px;display:grid;grid-template-columns:1.25fr 1fr;gap:54px;align-items:start}
+.intro h1{
+  font-family:"Libre Baskerville",Georgia,serif;font-weight:400;
+  font-size:clamp(30px,4vw,48px);line-height:1.15;letter-spacing:-.02em;margin:0 0 20px;
+}
+.intro p{margin:0;max-width:48ch;color:var(--ink-soft);font-size:17px}
+.counts{border-top:1px solid var(--hair)}
+.count{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-bottom:1px solid var(--hair)}
+.count dt{margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.count dd{margin:0;font-family:"Libre Baskerville",serif;font-size:19px}
+
+/* ------------------------------------------------------------------- panels */
+.panel{display:none;padding-bottom:70px}
+.panel.on{display:block}
+.panel-head{
+  display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+  padding-bottom:18px;border-bottom:1px solid var(--hair);margin-bottom:40px;
+}
+.panel-head h2{
+  font-family:"Libre Baskerville",serif;font-weight:400;font-size:24px;margin:0;letter-spacing:-.01em;
+}
+.panel-head p{margin:0;color:var(--ink-soft);font-size:14.5px;max-width:52ch}
+
+/* ------------------------------------------------------------- swing tickets */
+.gallery{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(282px,1fr));
+  gap:58px 40px;
+}
+.ticket{position:relative;padding-top:26px}
+/* the string */
+.ticket::before{
+  content:"";position:absolute;left:38px;top:0;width:1px;height:26px;
+  background:var(--sand-deep);
+}
+.tag{
+  position:relative;background:var(--sand);border:1px solid var(--hair);
+  padding:30px 24px 22px;
+  /* notched top-left corner, like a punched swing ticket */
+  clip-path:polygon(0 18px,18px 0,100% 0,100% 100%,0 100%);
+}
+/* the punched hole */
+.tag::before{
+  content:"";position:absolute;left:30px;top:13px;width:9px;height:9px;
+  border:1px solid var(--sand-deep);border-radius:50%;background:var(--paper);
+}
+.tag.gone{background:var(--paper);border-style:dashed}
+.tag-kicker{
+  font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft);
+  margin:0 0 8px;
+}
+.tag-title{
+  font-family:"Libre Baskerville",serif;font-weight:400;font-size:19px;line-height:1.26;
+  margin:0 0 4px;letter-spacing:-.01em;
+}
+.tag-shop{font-size:13px;color:var(--ink-soft);margin:0 0 20px}
+.price{
+  font-family:"Libre Baskerville",serif;font-size:34px;line-height:1;letter-spacing:-.025em;
+  margin:0;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+}
+.price small{font-size:13px;font-family:"Jost",sans-serif;color:var(--ink-soft);letter-spacing:.1em}
+.was{
+  font-size:13px;color:var(--ink-soft);margin:7px 0 0;
+}
+.was s{text-decoration-thickness:1px}
+
+/* the markdown ladder: one dot per step, filled ones already taken */
+.ladder{margin:20px 0 4px}
+.ladder .dots{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ladder .dots i{
+  width:7px;height:7px;border-radius:50%;border:1px solid var(--ink-soft);display:block;
+}
+.ladder .dots i.done{background:var(--ink);border-color:var(--ink)}
+.ladder .dots i.floor{border-color:var(--clay);width:9px;height:9px}
+.ladder .dots i.floor.done{background:var(--clay)}
+.ladder .cap{
+  font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-top:9px;
+}
+.tag-facts{margin:20px 0 0;border-top:1px solid var(--hair)}
+.tf{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:13.5px}
+.tf b{font-weight:400;color:var(--ink-soft);letter-spacing:.02em}
+.tag-acts{margin-top:20px;display:flex;flex-wrap:wrap;gap:9px}
+.stamp{
+  position:absolute;right:16px;top:16px;font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--clay);border:1px solid var(--clay);
+  border-radius:999px;padding:3px 9px;
+}
+.stamp.sold{color:var(--moss);border-color:var(--moss)}
+.stamp.back{color:var(--ink-soft);border-color:var(--hair)}
+
+/* -------------------------------------------------------------- shops strip */
+.shops{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair)}
+.shop{background:var(--paper);padding:24px}
+.shop h3{font-family:"Libre Baskerville",serif;font-weight:400;font-size:18px;margin:0 0 4px}
+.shop p{margin:0 0 16px;font-size:13px;color:var(--ink-soft)}
+.shop .sf{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px solid var(--hair)}
+.shop .sf b{font-weight:400;color:var(--ink-soft)}
+
+/* ------------------------------------------------------------------- forms */
+.form{max-width:620px}
+.f{margin-bottom:24px}
+.f label{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:7px}
+.f input{
+  width:100%;background:transparent;border:1px solid var(--hair);border-radius:3px;
+  font-family:"Jost",sans-serif;font-size:15.5px;padding:11px 13px;color:var(--ink);
+}
+.f input:focus{outline:none;border-color:var(--ink)}
+.f p{margin:7px 0 0;font-size:13.5px;color:var(--ink-soft)}
+.fpair{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+.nil{
+  font-size:14px;color:var(--ink-soft);border:1px dashed var(--hair);border-radius:4px;
+  padding:46px 28px;text-align:center;
+}
+.gallery .nil{grid-column:1/-1}
+.terms{border-top:1px solid var(--hair);max-width:620px}
+.term{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--hair);font-size:14.5px}
+.term b{font-weight:400;color:var(--ink-soft)}
+
+/* ------------------------------------------------------------------- toast */
+#toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;max-width:90vw;
+  background:var(--ink);color:var(--paper);border-radius:999px;padding:12px 22px;
+  font-size:14px;display:none;
+}
+#toast.bad{background:var(--clay)}
+#toast.on{display:block}
+
+@media (max-width:860px){
+  .wrap{padding:0 22px}
+  .intro{grid-template-columns:1fr;gap:34px;padding:38px 0 34px}
+  .fpair{grid-template-columns:1fr;gap:0}
+  .gallery{gap:48px 24px}
+  .top-right{margin-left:0;width:100%}
+}
+
+/* ============================ BOT CHAIN ECOSYSTEM FOOTER ================== */
+footer.bc-foot{
+  border-top:1px solid var(--hair);padding:38px 0 46px;margin-top:0;
+  display:block;text-align:left;text-transform:none;background:transparent;
+  font-family:"Jost",system-ui,sans-serif;
+}
+.bc-foot-grid{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.bc-logo{flex:0 0 auto;display:block}
+.bc-logo svg path{fill:var(--moss)}
+.bc-id{
+  font-family:"Libre Baskerville",Georgia,serif;font-weight:400;font-size:18px;
+  letter-spacing:-.01em;line-height:1.2;text-transform:none;color:var(--ink);
+}
+.bc-id small{
+  display:block;font-family:"Jost",sans-serif;font-size:11px;font-weight:300;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-top:5px;
+}
+.bc-links{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.bc-links a{
+  font-size:13px;letter-spacing:.03em;text-transform:none;color:var(--ink);
+  text-decoration:none;border:1px solid var(--hair);border-radius:999px;padding:8px 17px;
+}
+.bc-links a:hover{border-color:var(--ink)}
+.bc-meta{
+  margin-top:26px;padding-top:16px;border-top:1px solid var(--hair);
+  font-size:12.5px;letter-spacing:.04em;text-transform:none;color:var(--ink-soft);
+}
+.bc-meta b{color:var(--ink);font-weight:400}
+@media (max-width:860px){ .bc-links{margin-left:0;width:100%} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="top-row">
+      <div class="logo">Shelf<em>Life</em></div>
+      <nav class="links" id="nav">
+        <a class="on" data-panel="p-shelf">The shelf</a>
+        <a data-panel="p-shops">Shops</a>
+        <a data-panel="p-consign">Consign</a>
+        <a data-panel="p-terms">Terms</a>
+      </nav>
+      <div class="top-right">
+        <span class="chip" id="b-net">TESTNET</span>
+        <span class="acct" id="b-acct">not connected</span>
+        <button class="q" id="btn-connect">Connect wallet</button>
+      </div>
+    </div>
+    <div class="hr"></div>
+  </header>
+
+  <section class="intro">
+    <div>
+      <h1>Price tags that walk themselves down.</h1>
+      <p>
+        A consignor sets a start price, a floor and a markdown step. From then on the price falls on
+        the clock — nobody re-lists, nobody re-prices, and the shop cannot raise it or pause the
+        markdown. Past the term the item goes back to its owner rather than being quietly reduced
+        to nothing.
+      </p>
+    </div>
+    <dl class="counts">
+      <div class="count"><dt>Shops open</dt><dd id="s-shops">—</dd></div>
+      <div class="count"><dt>Items listed</dt><dd id="s-items">—</dd></div>
+      <div class="count"><dt>Owed to parties</dt><dd id="s-locked">—</dd></div>
+      <div class="count"><dt>Protocol fee</dt><dd id="s-fee">—</dd></div>
+      <div class="count"><dt>Your proceeds</dt><dd id="s-mine">—</dd></div>
+      <div style="padding-top:20px">
+        <button class="q light" id="btn-proceeds">Withdraw my proceeds</button>
+      </div>
+    </dl>
+  </section>
+
+  <!-- -------------------------------------------------------------- the shelf -->
+  <section class="panel on" id="p-shelf">
+    <div class="panel-head">
+      <h2>On the shelf</h2>
+      <p>The twenty-four most recent tickets. Filled dots are markdown steps already taken; the ringed dot is the floor.</p>
+    </div>
+    <div class="gallery" id="gallery"><div class="nil">Nothing on the shelf yet.</div></div>
+  </section>
+
+  <!-- ------------------------------------------------------------------ shops -->
+  <section class="panel" id="p-shops">
+    <div class="panel-head">
+      <h2>Shops</h2>
+      <p>A shop takes a commission on every sale and can stop accepting new stock, but never touches a schedule already set.</p>
+    </div>
+    <div class="shops" id="shops"><div class="shop"><p>No shops open yet.</p></div></div>
+    <div class="form" style="margin-top:46px">
+      <div class="f">
+        <label for="sh-name">Open a shop &mdash; name</label>
+        <input id="sh-name" maxlength="64" placeholder="Cedar &amp; Co" />
+      </div>
+      <div class="f" style="max-width:280px">
+        <label for="sh-comm">Commission, %</label>
+        <input id="sh-comm" inputmode="decimal" placeholder="20" />
+        <p>Up to 40%. Fixed for the life of the shop.</p>
+      </div>
+      <button class="q" id="btn-shop">Open the shop</button>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- consign -->
+  <section class="panel" id="p-consign">
+    <div class="panel-head">
+      <h2>Consign an item</h2>
+      <p>The schedule you set here cannot be changed afterwards by anyone — not the shop, not the protocol owner.</p>
+    </div>
+    <div class="form">
+      <div class="fpair">
+        <div class="f">
+          <label for="c-shop">Shop number</label>
+          <input id="c-shop" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="f">
+          <label for="c-title">Item</label>
+          <input id="c-title" maxlength="64" placeholder="Walnut credenza" />
+        </div>
+      </div>
+      <div class="fpair">
+        <div class="f">
+          <label for="c-start">Start price, BOT</label>
+          <input id="c-start" inputmode="decimal" placeholder="10" />
+        </div>
+        <div class="f">
+          <label for="c-floor">Floor price, BOT</label>
+          <input id="c-floor" inputmode="decimal" placeholder="4" />
+          <p>It will never be marked below this.</p>
+        </div>
+      </div>
+      <div class="fpair">
+        <div class="f">
+          <label for="c-step">Markdown per step, %</label>
+          <input id="c-step" inputmode="decimal" placeholder="10" />
+          <p>Of the start price. Up to 20% per step.</p>
+        </div>
+        <div class="f">
+          <label for="c-every">A step every, days</label>
+          <input id="c-every" inputmode="decimal" placeholder="7" />
+        </div>
+      </div>
+      <div class="f" style="max-width:280px">
+        <label for="c-term">Term, days</label>
+        <input id="c-term" inputmode="decimal" placeholder="90" />
+        <p>After this the shelf closes and the item is yours again.</p>
+      </div>
+      <button class="q" id="btn-consign">Put it on the shelf</button>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------ terms -->
+  <section class="panel" id="p-terms">
+    <div class="panel-head">
+      <h2>Terms</h2>
+      <p>What is fixed, what is bounded, and who can do what.</p>
+    </div>
+    <div class="terms">
+      <div class="term"><b>Markdown schedule</b><span>fixed at consignment, unchangeable</span></div>
+      <div class="term"><b>Step size</b><span>up to 20% of start, per step</span></div>
+      <div class="term"><b>Step interval</b><span>1 hour – 30 days</span></div>
+      <div class="term"><b>Term</b><span>1 – 365 days</span></div>
+      <div class="term"><b>Shop commission</b><span>up to 40%, fixed per shop</span></div>
+      <div class="term"><b>Protocol fee ceiling</b><span>5.00 %</span></div>
+      <div class="term"><b>Overpayment on a buy</b><span>returned to the buyer</span></div>
+      <div class="term"><b>Consignor pulls the item</b><span>at any time</span></div>
+      <div class="term"><b>Shop returns the item</b><span>only once the term has run out</span></div>
+      <div class="term"><b>Proceeds</b><span>pulled by each party, never pushed</span></div>
+    </div>
+    <p style="margin-top:28px;max-width:58ch;color:var(--ink-soft)">
+      A pause by the protocol owner stops new shops, new consignments and new sales. It never stops a
+      withdrawal, because proceeds already credited belong to the party they were credited to.
+    </p>
+  </section>
+
+  <!-- ===================== BOT CHAIN ECOSYSTEM FOOTER ====================== -->
+  <footer class="bc-foot">
+    <div class="bc-foot-grid">
+      <div class="bc-logo" aria-hidden="true"><svg viewBox="0 0 63.63 100" xmlns="http://www.w3.org/2000/svg" style="width:23px;height:36px;display:block"><path fill="#00A67E" d="M31.67 99.95 L0 82.48 L0.11 63.74 L47.01 90.60 L47.01 73.19 L15.98 55.32 L15.95 36.49 L46.92 53.57 L47.39 36.82 L15.96 17.81 L16.26 0 L63.06 27.02 L62.82 46.20 L47.86 54.67 L62.85 63.00 L63.62 81.42 Z"/></svg></div>
+      <div class="bc-id">BOT Chain<small>Part of the ecosystem</small></div>
+      <div class="bc-links">
+        <a href="https://botchain.ai" target="_blank" rel="noopener noreferrer">botchain.ai</a>
+        <a id="bc-explorer" href="https://scan.botchain.ai" target="_blank" rel="noopener noreferrer">Explorer</a>
+      </div>
+    </div>
+    <div class="bc-meta">
+      <span>&copy; 2026 <b>BOT Chain</b> &mdash; EVM-compatible Layer 1</span>
+    </div>
+  </footer>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================================
+   TESTNET -> MAINNET: swap these five values together, never some of them.
+     CONTRACT_ADDRESS  -> the mainnet address
+     chainId           -> "0x2A5"
+     chainName         -> "BOT Chain"
+     rpcUrls           -> ["https://rpc.botchain.ai"]
+     blockExplorerUrls -> ["https://scan.botchain.ai"]
+   ...and set label -> "MAINNET" so the badge reads correctly.
+   ========================================================================== */
+const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+const NETWORK = {
+  chainId: "0x3C8",                              // 968 testnet  | mainnet: "0x2A5"
+  chainIdDec: 968,                               // reference only, not shown on the page | mainnet: 677
+  chainName: "BOT Chain Testnet",                //              | mainnet: "BOT Chain"
+  rpcUrls: ["https://rpc.bohr.life"],            //              | mainnet: ["https://rpc.botchain.ai"]
+  blockExplorerUrls: ["https://scan.bohr.life"], //              | mainnet: ["https://scan.botchain.ai"]
+  nativeCurrency: { name: "BOT", symbol: "BOT", decimals: 18 },
+  label: "TESTNET"                               //              | mainnet: "MAINNET"
+};
+
+const ABI = [
+  "function openShop(string name, uint16 commissionBps) returns (uint256)",
+  "function setAccepting(uint256 shopId, bool accepting)",
+  "function consign(uint256 shopId, string title, uint256 startPrice, uint256 floorPrice, uint16 stepBps, uint64 stepSecs, uint64 term) returns (uint256)",
+  "function buy(uint256 itemId) payable",
+  "function returnItem(uint256 itemId)",
+  "function withdrawProceeds()",
+  "function priceOf(uint256 itemId) view returns (uint256)",
+  "function stepsTaken(uint256 itemId) view returns (uint256)",
+  "function nextStepIn(uint256 itemId) view returns (uint256)",
+  "function expiresAt(uint256 itemId) view returns (uint256)",
+  "function isOnShelf(uint256 itemId) view returns (bool)",
+  "function shopCount() view returns (uint256)",
+  "function itemCount() view returns (uint256)",
+  "function getShop(uint256 shopId) view returns (tuple(address keeper,string name,uint16 commissionBps,bool accepting,uint32 itemsTaken,uint32 itemsSold))",
+  "function getItem(uint256 itemId) view returns (tuple(uint64 shopId,address consignor,uint256 startPrice,uint256 floorPrice,uint16 stepBps,uint64 stepSecs,uint64 listedAt,uint64 term,uint256 soldFor,address buyer,uint8 status,string title))",
+  "function getShopItems(uint256 shopId) view returns (uint256[])",
+  "function itemsByConsignor(address who) view returns (uint256[])",
+  "function getRecentShops(uint256 limit) view returns (uint256[])",
+  "function getRecentItems(uint256 limit) view returns (uint256[])",
+  "function proceeds(address who) view returns (uint256)",
+  "function feeBps() view returns (uint16)",
+  "function lockedTotal() view returns (uint256)"
+];
+
+const ZERO = "0x0000000000000000000000000000000000000000";
+const DAY = 86400;
+let provider, signer, contract, readContract, account = null;
+let items = [], shops = [];
+
+const $ = (id) => document.getElementById(id);
+const fmt = (wei, dp = 4) => {
+  const n = Number(ethers.formatEther(wei));
+  if (n === 0) return "0";
+  if (n < 0.0001) return "<0.0001";
+  return n.toFixed(dp).replace(/\.?0+$/, "");
+};
+const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+function span(secs) {
+  const s = Number(secs);
+  if (s <= 0) return "now";
+  if (s < 3600) return Math.ceil(s / 60) + " min";
+  if (s < DAY) return (s / 3600).toFixed(1).replace(/\.0$/, "") + " h";
+  return Math.round(s / DAY) + " d";
+}
+let toastTimer;
+function toast(msg, bad) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "on" + (bad ? " bad" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = ""), 5200);
+}
+function reason(e) {
+  const m = e?.reason || e?.shortMessage || e?.info?.error?.message || e?.message || "Transaction failed";
+  return String(m).replace(/^execution reverted:?\s*/i, "").slice(0, 150);
+}
+
+/* ------------------------------------------------------------------ panels */
+document.querySelectorAll("#nav a").forEach((a) => {
+  a.addEventListener("click", () => {
+    document.querySelectorAll("#nav a").forEach((x) => x.classList.remove("on"));
+    document.querySelectorAll(".panel").forEach((p) => p.classList.remove("on"));
+    a.classList.add("on");
+    $(a.dataset.panel).classList.add("on");
+  });
+});
+
+/* ------------------------------------------------------------------ wallet */
+$("b-net").textContent = NETWORK.label;
+
+function readOnly() {
+  if (CONTRACT_ADDRESS === ZERO) return;
+  try {
+    const p = new ethers.JsonRpcProvider(NETWORK.rpcUrls[0]);
+    readContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, p);
+  } catch (e) { /* no read-only view */ }
+}
+async function connect() {
+  if (!window.ethereum) { toast("No wallet found. Install MetaMask.", true); return; }
+  try {
+    walletBusy = true;
+    setTimeout(function () { walletBusy = false; }, 8000);
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    await ensureChain();
+    walletBusy = false;
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    account = await signer.getAddress();
+    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    $("b-acct").textContent = short(account);
+    $("btn-connect").textContent = "Connected";
+    await load();
+  } catch (e) { toast(reason(e), true); }
+}
+async function ensureChain() {
+  const current = await window.ethereum.request({ method: "eth_chainId" });
+  if (current.toLowerCase() === NETWORK.chainId.toLowerCase()) return;
+  try {
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: NETWORK.chainId }] });
+  } catch (err) {
+    if (err.code === 4902) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: NETWORK.chainId, chainName: NETWORK.chainName, rpcUrls: NETWORK.rpcUrls,
+          blockExplorerUrls: NETWORK.blockExplorerUrls, nativeCurrency: NETWORK.nativeCurrency
+        }]
+      });
+    } else throw err;
+  }
+}
+
+/* -------------------------------------------------------------------- load */
+async function load() {
+  const c = contract || readContract;
+  if (!c || CONTRACT_ADDRESS === ZERO) { render(); return; }
+  try {
+    const [sc, ic, locked, fee] = await Promise.all([
+      c.shopCount(), c.itemCount(), c.lockedTotal(), c.feeBps()
+    ]);
+    $("s-shops").textContent = sc.toString();
+    $("s-items").textContent = ic.toString();
+    $("s-locked").textContent = fmt(locked) + " BOT";
+    $("s-fee").textContent = (Number(fee) / 100).toFixed(2) + " %";
+    $("s-mine").textContent = account ? fmt(await c.proceeds(account)) + " BOT" : "—";
+
+    const shopIds = await c.getRecentShops(12);
+    shops = [];
+    for (const id of shopIds) shops.push({ id, s: await c.getShop(id) });
+
+    const itemIds = await c.getRecentItems(24);
+    items = [];
+    for (const id of itemIds) {
+      const it = await c.getItem(id);
+      const [price, steps, next, exp] = await Promise.all([
+        c.priceOf(id), c.stepsTaken(id), c.nextStepIn(id), c.expiresAt(id)
+      ]);
+      items.push({ id, it, price, steps, next, exp });
+    }
+    render();
+  } catch (e) { toast(reason(e), true); }
+}
+
+/* ------------------------------------------------------------------ render */
+function render() {
+  const g = $("gallery");
+  if (!items.length) {
+    g.innerHTML = '<div class="nil">' +
+      (CONTRACT_ADDRESS === ZERO
+        ? "Paste the deployed address into CONTRACT_ADDRESS to fill the shelf."
+        : "Nothing on the shelf yet.") + "</div>";
+  } else {
+    g.innerHTML = "";
+    items.forEach((r) => g.appendChild(ticket(r)));
+  }
+
+  const sh = $("shops");
+  if (!shops.length) {
+    sh.innerHTML = '<div class="shop"><p>No shops open yet.</p></div>';
+  } else {
+    sh.innerHTML = "";
+    shops.forEach(({ id, s }) => {
+      const d = document.createElement("div");
+      d.className = "shop";
+      d.innerHTML =
+        "<h3></h3>" +
+        "<p>Shop " + id.toString() + (s.accepting ? " &mdash; accepting stock" : " &mdash; closed to new stock") + "</p>" +
+        '<div class="sf"><b>Commission</b><span>' + (Number(s.commissionBps) / 100).toFixed(2) + " %</span></div>" +
+        '<div class="sf"><b>Items taken</b><span>' + s.itemsTaken.toString() + "</span></div>" +
+        '<div class="sf"><b>Items sold</b><span>' + s.itemsSold.toString() + "</span></div>" +
+        '<div class="sf"><b>Keeper</b><span>' + short(s.keeper) + "</span></div>";
+      d.querySelector("h3").textContent = s.name;
+      if (account && account.toLowerCase() === s.keeper.toLowerCase()) {
+        const b = document.createElement("button");
+        b.className = "q light tiny";
+        b.style.marginTop = "16px";
+        b.textContent = s.accepting ? "Stop accepting stock" : "Accept stock again";
+        b.addEventListener("click", () => send(() => contract.setAccepting(id, !s.accepting), "Shop updated."));
+        d.appendChild(b);
+      }
+      sh.appendChild(d);
+    });
+  }
+}
+
+function ticket({ id, it, price, steps, next, exp }) {
+  const el = document.createElement("div");
+  el.className = "ticket";
+
+  const status = Number(it.status);
+  const expired = Date.now() / 1000 >= Number(exp);
+  const live = status === 0 && !expired;
+  const mine = account && account.toLowerCase() === it.consignor.toLowerCase();
+  const shop = shops.find((s) => s.id.toString() === it.shopId.toString());
+  const keeper = shop ? shop.s.keeper : null;
+  const isKeeper = account && keeper && account.toLowerCase() === keeper.toLowerCase();
+
+  let stamp = "";
+  if (status === 1) stamp = '<span class="stamp sold">Sold</span>';
+  else if (status === 2) stamp = '<span class="stamp back">Returned</span>';
+  else if (expired) stamp = '<span class="stamp">Term over</span>';
+
+  // The ladder: how many steps it takes to reach the floor, and where we are.
+  const startN = Number(ethers.formatEther(it.startPrice));
+  const floorN = Number(ethers.formatEther(it.floorPrice));
+  const perStep = (startN * Number(it.stepBps)) / 10000;
+  const toFloor = perStep > 0 ? Math.ceil((startN - floorN) / perStep) : 0;
+  const total = Math.max(1, Math.min(toFloor, 24));
+  const taken = Math.min(Number(steps), total);
+  let dots = "";
+  for (let i = 0; i < total; i++) {
+    const isFloor = i === total - 1;
+    dots += '<i class="' + (i < taken ? "done " : "") + (isFloor ? "floor" : "") + '"></i>';
+  }
+
+  const tag = document.createElement("div");
+  tag.className = "tag" + (live ? "" : " gone");
+  tag.innerHTML =
+    stamp +
+    '<p class="tag-kicker">Ticket ' + String(id).padStart(3, "0") + "</p>" +
+    '<h3 class="tag-title"></h3>' +
+    '<p class="tag-shop"></p>' +
+    '<p class="price">' + fmt(status === 1 ? it.soldFor : price) +
+      "<small>BOT" + (status === 1 ? " &mdash; sold at" : "") + "</small></p>" +
+    (Number(steps) > 0 && status === 0
+      ? '<p class="was">was <s>' + fmt(it.startPrice) + " BOT</s> &mdash; " + steps.toString() + " markdown" + (Number(steps) === 1 ? "" : "s") + " taken</p>"
+      : "") +
+    '<div class="ladder"><div class="dots">' + dots + '</div>' +
+      '<div class="cap">' + (live
+        ? (Number(next) === 0 ? "On the floor price" : "Next markdown in " + span(next))
+        : "Markdown stopped") + "</div></div>" +
+    '<div class="tag-facts">' +
+      tf("Floor", fmt(it.floorPrice) + " BOT") +
+      tf("Step", (Number(it.stepBps) / 100).toFixed(2) + "% every " + span(it.stepSecs)) +
+      tf("Shelf closes", new Date(Number(exp) * 1000).toISOString().slice(0, 10)) +
+      tf("Consignor", short(it.consignor)) +
+    "</div>";
+  tag.querySelector(".tag-title").textContent = it.title;
+  tag.querySelector(".tag-shop").textContent = shop ? shop.s.name : "Shop " + it.shopId.toString();
+
+  const acts = document.createElement("div");
+  acts.className = "tag-acts";
+  if (live && !mine) {
+    acts.appendChild(
+      act("Buy at " + fmt(price) + " BOT", "", () => contract.buy(id, { value: price }), "Bought.")
+    );
+  }
+  if (status === 0 && mine) {
+    acts.appendChild(act("Pull the item", "light", () => contract.returnItem(id), "Item pulled."));
+  }
+  if (status === 0 && expired && isKeeper) {
+    acts.appendChild(act("Return to consignor", "light", () => contract.returnItem(id), "Item returned."));
+  }
+  if (acts.children.length) tag.appendChild(acts);
+
+  el.appendChild(tag);
+  return el;
+
+  function tf(k, v) {
+    return '<div class="tf"><b>' + k + "</b><span>" + v + "</span></div>";
+  }
+}
+
+function act(text, extra, fn, ok) {
+  const b = document.createElement("button");
+  b.className = "q " + extra;
+  b.textContent = text;
+  b.addEventListener("click", () => {
+    if (!contract) return toast("Connect a wallet first.", true);
+    send(fn, ok);
+  });
+  return b;
+}
+async function send(fn, ok) {
+  try {
+    toast("Awaiting confirmation…");
+    const tx = await fn();
+    await tx.wait();
+    toast(ok);
+    await load();
+  } catch (e) { toast(reason(e), true); }
+}
+
+/* ------------------------------------------------------------------ actions */
+$("btn-proceeds").addEventListener("click", () => {
+  if (!contract) return toast("Connect a wallet first.", true);
+  send(() => contract.withdrawProceeds(), "Proceeds withdrawn.");
+});
+
+$("btn-shop").addEventListener("click", () => {
+  if (!contract) return toast("Connect a wallet first.", true);
+  const name = $("sh-name").value.trim();
+  const pct = parseFloat($("sh-comm").value);
+  if (!name) return toast("Give the shop a name.", true);
+  if (isNaN(pct) || pct < 0 || pct > 40) return toast("Commission must be 0–40%.", true);
+  send(() => contract.openShop(name, Math.round(pct * 100)), "Shop opened.");
+});
+
+$("btn-consign").addEventListener("click", () => {
+  if (!contract) return toast("Connect a wallet first.", true);
+  const shopId = parseInt($("c-shop").value, 10);
+  const title = $("c-title").value.trim();
+  const start = $("c-start").value.trim();
+  const floor = $("c-floor").value.trim();
+  const step = parseFloat($("c-step").value);
+  const every = parseFloat($("c-every").value);
+  const term = parseFloat($("c-term").value);
+  if (isNaN(shopId)) return toast("Enter a shop number.", true);
+  if (!title) return toast("Name the item.", true);
+  if (!start || Number(start) <= 0) return toast("Enter a start price.", true);
+  if (!floor || Number(floor) <= 0) return toast("Enter a floor price.", true);
+  if (Number(floor) > Number(start)) return toast("The floor cannot sit above the start price.", true);
+  if (isNaN(step) || step <= 0 || step > 20) return toast("Step must be 0–20%.", true);
+  if (!every || every <= 0) return toast("Enter a step interval in days.", true);
+  if (!term || term < 1) return toast("Term is at least 1 day.", true);
+  send(
+    () => contract.consign(
+      shopId, title,
+      ethers.parseEther(start), ethers.parseEther(floor),
+      Math.round(step * 100), Math.round(every * DAY), Math.round(term * DAY)
+    ),
+    "On the shelf."
+  );
+});
+
+$("btn-connect").addEventListener("click", connect);
+
+/* ---- BOT Chain ecosystem footer: follows the NETWORK config above ---- */
+(function () {
+  var ex = document.getElementById("bc-explorer");
+  if (ex) ex.href = NETWORK.blockExplorerUrls[0];
+})();
+
+readOnly();
+load();
+var walletBusy = false;
+if (window.ethereum) {
+  // Don't reload while we are mid-connect: switching the chain fires
+  // chainChanged, and reloading there is what made Connect need two clicks.
+  window.ethereum.on("accountsChanged", function () { if (!walletBusy) location.reload(); });
+  window.ethereum.on("chainChanged", function () { if (!walletBusy) location.reload(); });
+}
+// Already authorised and on the right chain? Show connected without a click.
+(async function reconnect() {
+  if (!window.ethereum) return;
+  try {
+    const accs = await window.ethereum.request({ method: "eth_accounts" });
+    if (!accs || !accs.length) return;
+    const chain = await window.ethereum.request({ method: "eth_chainId" });
+    if (String(chain).toLowerCase() !== NETWORK.chainId.toLowerCase()) return;
+    await connect();
+  } catch (e) { /* leave the Connect button as it was */ }
+})();
+</script>
+</body>
+</html>
